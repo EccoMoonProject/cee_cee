@@ -4,9 +4,6 @@ use serde::{Deserialize, Serialize};
 use serde_json::json;
 use serde_json::Value;
 use std::error::Error;
-#[path = "../structs/structs.rs"]
-pub mod structs;
-use crate::methods::structs::Config; // Change this line
 
 pub fn string_to_u8vec(input: &str) -> Vec<u8> {
     input.as_bytes().to_vec()
@@ -36,4 +33,17 @@ pub fn base64_to_value(base64: &str) -> Result<Value, Box<dyn Error>> {
     let bytes = base64::decode(base64)?;
     let value = serde_json::from_slice(&bytes)?;
     Ok(value)
+}
+
+pub fn vec_u8_to_string(data: Vec<u8>) -> Result<String, std::string::FromUtf8Error> {
+    String::from_utf8(data)
+}
+
+
+pub fn u8vec_to_hex(input: &[u8]) -> String {
+    let mut hex = String::new();
+    for byte in input {
+        hex.push_str(&format!("{:02x}", byte));
+    }
+    hex
 }

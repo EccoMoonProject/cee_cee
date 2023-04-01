@@ -71,3 +71,30 @@ pub fn create_folder_and_write_decrypted_value(
 
     Ok(())
 }
+
+pub fn write_string_to_file_ts(data: &[u8], output_path: &str) -> Result<(), Box<dyn std::error::Error>> {
+    // Create a directory if it does not exist
+    let output_file_path = Path::new(output_path);
+    if let Some(parent_dir) = output_file_path.parent() {
+        std::fs::create_dir_all(parent_dir)?;
+    }
+
+    // Write the input string to the output file
+    let mut file = File::create(output_file_path)?;
+    file.write_all(data)?;
+
+    Ok(())
+}
+pub fn write_decrypted_data_to_ts_file(decrypted_data: &str, output_path: &str) -> Result<(), Box<dyn std::error::Error>> {
+    // decode the base64 string
+    let decrypted_data = base64::decode(decrypted_data)?;
+    let output_file_path = Path::new(output_path);
+    if let Some(parent_dir) = output_file_path.parent() {
+        std::fs::create_dir_all(parent_dir)?;
+    }
+
+    let mut file = File::create(output_file_path)?;
+    file.write_all(&decrypted_data)?;
+
+    Ok(())
+}

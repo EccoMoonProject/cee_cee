@@ -2,19 +2,20 @@ use clap::{App, Arg, ArgMatches, SubCommand};
 use serde_json::Value;
 #[path = "../core/crypto/crypto.rs"]
 mod crypto;
+#[path = "../cli/functions.rs"]
+mod functions;
 #[path = "../core/parsing/parser.rs"]
 mod parser;
 #[path = "../core/reader/reader.rs"]
 mod reader;
 #[path = "../core/storage/storage.rs"]
 mod storage;
-
 #[path = "../core/structs/structs.rs"]
 pub mod structs;
-use crate::methods::structs::Config; // Change this line
 use base64::{decode, encode};
 use colored::*;
 use dialoguer::{theme::ColorfulTheme, Input, Select};
+use functions::*;
 use serde::{Deserialize, Serialize};
 
 pub fn cli_command_line(matches: &ArgMatches) {
@@ -31,7 +32,20 @@ pub fn cli_command_line(matches: &ArgMatches) {
         let encrypted_file_path = matches.value_of("encrypt_path").unwrap();
 
         encrypting_process(file_path, key_path, encrypted_file_path);
+    } else if let Some(matches) = matches.subcommand_matches("encrypt-ts") {
+        let ascii = r#"
+        ___       _  __      __ ___ ___       _        
+        )_  )\ ) / ` )_) \_) )_) )   )  )\ ) / _       
+       (__ (  ( (_. / \   / /   (  _(_ (  ( (__/ o o o 
+                                                       
+"#;
+        println!("{}", ascii.truecolor(115, 28, 147));
 
+        let file_path = matches.value_of("input").unwrap();
+        let key_path = matches.value_of("key_path").unwrap();
+        let encrypted_file_path = matches.value_of("encrypt_path").unwrap();
+
+        encrypting_process_ts(file_path, key_path, encrypted_file_path);
     } else if let Some(matches) = matches.subcommand_matches("decrypt") {
         let ascii = r#"
 
@@ -45,6 +59,19 @@ pub fn cli_command_line(matches: &ArgMatches) {
         let file_to_decrypt = matches.value_of("file_to_decrypt").unwrap();
         let decrypted_path = matches.value_of("decrypted_path").unwrap();
         decrypting_process(key_path, file_to_decrypt, decrypted_path);
+    } else if let Some(matches) = matches.subcommand_matches("decrypt-ts") {
+        let ascii = r#"
+
+ __  ___  _  __      __ ___ ___       _        
+) ) )_  / ` )_) \_) )_) )   )  )\ ) / _       
+/_/ (__ (_. / \   / /   (  _(_ (  ( (__/ o o o 
+                                              
+"#;
+        println!("{}", ascii.truecolor(115, 28, 147));
+        let key_path = matches.value_of("key").unwrap();
+        let file_to_decrypt = matches.value_of("file_to_decrypt").unwrap();
+        let decrypted_path = matches.value_of("decrypted_path").unwrap();
+        decrypting_process_ts(key_path, file_to_decrypt, decrypted_path);
     } else if let Some(matches) = matches.subcommand_matches("key") {
         let ascii = r#"
 
@@ -91,7 +118,14 @@ pub fn cli_command_line(matches: &ArgMatches) {
   "#;
         println!("{}", ascii.truecolor(115, 28, 147));
         print!("\n");
-        let commands = &["encrypt", "decrypt", "key", "import_key"];
+        let commands = &[
+            "encrypt",
+            "encrypt-ts",
+            "decrypt-ts",
+            "decrypt",
+            "key",
+            "import_key",
+        ];
 
         let selection = Select::with_theme(&ColorfulTheme::default())
             .with_prompt("Choose a command")
@@ -118,7 +152,23 @@ pub fn cli_command_line(matches: &ArgMatches) {
                     .interact_text()
                     .unwrap();
 
-                    encrypting_process(&input_path, &key_path, &encrypt_path);
+                encrypting_process(&input_path, &key_path, &encrypt_path);
+            }
+            "encrypt-ts" => {
+                let input_path: String = Input::with_theme(&ColorfulTheme::default())
+                    .with_prompt("Enter the path to the JSON file to encrypt")
+                    .interact_text()
+                    .unwrap();
+                let key_path: String = Input::with_theme(&ColorfulTheme::default())
+                    .with_prompt("Enter the path to the key to encrypt")
+                    .interact_text()
+                    .unwrap();
+                let encrypt_path: String = Input::with_theme(&ColorfulTheme::default())
+                    .with_prompt("Enter the path to folder where encrypted JSON will be stored")
+                    .interact_text()
+                    .unwrap();
+
+                encrypting_process_ts(&input_path, &key_path, &encrypt_path);
             }
             "decrypt" => {
                 let key_path: String = Input::with_theme(&ColorfulTheme::default())
@@ -135,6 +185,22 @@ pub fn cli_command_line(matches: &ArgMatches) {
                     .unwrap();
 
                 decrypting_process(&key_path, &file_to_decrypt, &decrypted_path);
+            }
+            "decrypt-ts" => {
+                let key_path: String = Input::with_theme(&ColorfulTheme::default())
+                    .with_prompt("Enter the path to the JSON file containing the AES key")
+                    .interact_text()
+                    .unwrap();
+                let file_to_decrypt: String = Input::with_theme(&ColorfulTheme::default())
+                    .with_prompt("Enter the path to the JSON file")
+                    .interact_text()
+                    .unwrap();
+                let decrypted_path: String = Input::with_theme(&ColorfulTheme::default())
+                    .with_prompt("Enter the path to folder where decrypted JSON will be stored")
+                    .interact_text()
+                    .unwrap();
+
+                decrypting_process_ts(&key_path, &file_to_decrypt, &decrypted_path);
             }
             "key" => {
                 let key_path: String = Input::with_theme(&ColorfulTheme::default())
@@ -211,7 +277,51 @@ pub(crate) fn create_cli_app() -> ArgMatches {
                 ),
         )
         .subcommand(
+            SubCommand::with_name("encrypt-ts")
+                .about("Encrypts a JSON file using a generated AES key")
+                .arg(
+                    Arg::with_name("input")
+                        .help("Path to the JSON file to encrypt")
+                        .required(true)
+                        .index(1),
+                )
+                .arg(
+                    Arg::with_name("key_path")
+                        .help("Path to the key to encrypt")
+                        .required(true)
+                        .index(2),
+                )
+                .arg(
+                    Arg::with_name("encrypt_path")
+                        .help("Path to folder where encrypted JSON will be stored")
+                        .required(true)
+                        .index(3),
+                ),
+        )
+        .subcommand(
             SubCommand::with_name("decrypt")
+                .about("Decrypts encrypted data using a provided AES key")
+                .arg(
+                    Arg::with_name("key")
+                        .help("Path to the JSON file containing the AES key")
+                        .required(true)
+                        .index(1),
+                )
+                .arg(
+                    Arg::with_name("file_to_decrypt")
+                        .help("Path to the JSON file")
+                        .required(true)
+                        .index(2),
+                )
+                .arg(
+                    Arg::with_name("decrypted_path")
+                        .help("Path to folder where decrypted JSON will be stored")
+                        .required(true)
+                        .index(3),
+                ),
+        )
+        .subcommand(
+            SubCommand::with_name("decrypt-ts")
                 .about("Decrypts encrypted data using a provided AES key")
                 .arg(
                     Arg::with_name("key")
@@ -263,53 +373,4 @@ pub(crate) fn create_cli_app() -> ArgMatches {
         .get_matches();
 
     matches
-}
-
-fn decrypting_process(key_path: &str, file_to_decrypt: &str, decrypted_path: &str) {
-    let mut key_to_encrypt: Vec<u8> = vec![0u8; 16];
-    match reader::read_key_file_path_and_convert_to_u8(&key_path) {
-        Ok(key) => key_to_encrypt = key,
-        Err(e) => println!("Error: {}", e),
-    }
-
-    let mut to_be_decrypted = vec![0u8; 16];
-    match reader::read_file_to_decrypt(&file_to_decrypt) {
-        Ok(key) => to_be_decrypted = key,
-        Err(e) => println!("Error: {}", e),
-    }
-    let decrypted = crypto::decrypt(&key_to_encrypt, &to_be_decrypted).unwrap();
-
-    let string_decrypted = parser::u8vec_to_string(&decrypted);
-
-    let val = parser::base64_to_value(&string_decrypted).unwrap();
-
-    match storage::create_folder_and_write_decrypted_value(&val, &decrypted_path) {
-        Ok(_) => println!("{}", "Successfully!!!".on_truecolor(135, 28, 167)),
-        Err(e) => println!("Error: {}", e),
-    }
-}
-
-
-fn encrypting_process(file_path: &str, key_path: &str, encrypted_file_path: &str) {
-    let mut key_to_encrypt: Vec<u8> = vec![0u8; 16];
-    let data_to_encrypt = reader::read_file_as_value(file_path);
-
-    let base64_encoded = parser::to_base64(&data_to_encrypt).unwrap();
-
-    let parsed_to_u8 = parser::string_to_u8vec(&base64_encoded);
-
-    match reader::read_key_file_path_and_convert_to_u8(key_path) {
-        Ok(key) => key_to_encrypt = key,
-        Err(e) => println!("Error: {}", e),
-    }
-
-    let encrypted = crypto::encrypt(&key_to_encrypt, &parsed_to_u8);
-
-    match storage::create_folder_and_write_encrypted_struct(&encrypted, encrypted_file_path) {
-        Ok(_) => println!(
-            "{}",
-            "Successfully written to the file".on_truecolor(115, 28, 147)
-        ),
-        Err(e) => println!("Error: {}", e),
-    }
 }

@@ -72,3 +72,16 @@ pub fn read_file_to_decrypt(file_path: &str) -> Result<Vec<u8>, Box<dyn std::err
     Ok(encrypted_struct)
 }
 
+pub fn read_ts_js_file(file_path: &str) -> Result<String, Box<dyn std::error::Error>> {
+    // Open the file
+    let mut file = File::open(file_path)?;
+
+    // Read the contents of the file
+    let mut contents = Vec::new();
+    file.read_to_end(&mut contents)?;
+
+    // Encode the contents in base64
+    let encoded = base64::encode(&contents);
+
+    Ok(encoded)
+}
