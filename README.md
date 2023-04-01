@@ -54,7 +54,7 @@ It will run options menu to select your command
 ```
 #### key import 
 ```bash
-cee_cee import_key <path_where_key_folder_will_be_stored> <base64 encoded key>
+cee_cee import_key <path_where_key_folder_will_be_stored> <base64_encoded_key>
 ```
 
 #### encryption 
