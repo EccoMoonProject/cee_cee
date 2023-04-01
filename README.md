@@ -62,13 +62,18 @@ cee_cee import_key <path_where_key_folder_will_be_stored> <base64 encoded key>
 ```bash
   cee_cee encrypt <path_to_file> <path_to_key> <path_where_encrypted_data_folder_will_be_stored>
 ```
+```bash
+  cee_cee encrypt-ts <path_to_file> <path_to_key> <path_where_encrypted_data_folder_will_be_stored>
+```
 
 #### decryption
 
 ```bash
   cee_cee decrypt <path_to_key>  <path_to_file> <path_where_decrypted_data_folder_will_be_stored>
 ```
-
+```bash
+  cee_cee decrypt-ts <path_to_key>  <path_to_file> <path_where_decrypted_data_folder_will_be_stored>
+```
 
 ## Authors
 
